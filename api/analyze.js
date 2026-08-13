@@ -46,45 +46,38 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
 }
 `;
 
-        // Incercam doar pe modelele noi active
-        const candidateModels = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro'];
-        let response = null;
-        let lastData = null;
-
-        for (const model of candidateModels) {
-            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: systemPrompt },
-                            {
-                                inline_data: {
-                                    mime_type: mimeType || 'application/pdf',
-                                    data: base64Data
-                                }
+        // Apel direct pe noul model Gemini 2.5 Flash
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: systemPrompt },
+                        {
+                            inline_data: {
+                                mime_type: mimeType || 'application/pdf',
+                                data: base64Data
                             }
-                        ]
-                    }],
-                    generationConfig: {
-                        temperature: 0.1,
-                        response_mime_type: "application/json"
-                    }
-                })
-            });
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0.1,
+                    response_mime_type: "application/json"
+                }
+            })
+        });
 
-            lastData = await response.json();
-            if (response.ok) break;
-        }
+        const data = await response.json();
 
-        if (!response || !response.ok) {
-            console.error('Eroare detaliată Gemini:', JSON.stringify(lastData));
-            const msg = lastData?.error?.message || 'Eroare necunoscută Google API';
+        if (!response.ok) {
+            console.error('Eroare detaliată Gemini:', JSON.stringify(data));
+            const msg = data?.error?.message || 'Eroare necunoscută Google API';
             return res.status(500).json({ error: `Eroare Google AI: ${msg}` });
         }
 
-        const aiText = lastData.candidates?.[0]?.content?.parts?.[0]?.text;
+        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         
         if (!aiText) {
              return res.status(500).json({ error: 'AI-ul nu a generat niciun răspuns text.' });
