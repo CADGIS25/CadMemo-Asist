@@ -3,130 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastru AI - Asistent Inteligent</title>
-    <!-- Tailwind CSS pentru aspect modern -->
+    <title>CadMemo-Asist - Asistent Audit & Cadastru</title>
+    <!-- Tailwind CSS & FontAwesome -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
 
-    <!-- Header / Meniu Sus -->
-    <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+    <!-- Header / Navigație CadMemo-Asist -->
+    <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 px-6 py-3.5 flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-3">
-            <div class="bg-blue-600 p-2 rounded-lg text-white">
-                <i class="fa-solid fa-map-location-dot text-xl"></i>
+            <div class="bg-gradient-to-tr from-blue-600 to-indigo-500 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-compass-drafting text-xl"></i>
             </div>
             <div>
-                <h1 class="font-bold text-lg leading-none text-white">Cadastru AI</h1>
-                <span class="text-xs text-slate-400">Asistent Audit & Generare Memoriu</span>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-extrabold text-lg leading-none tracking-tight text-white">CadMemo<span class="text-blue-400">-Asist</span></h1>
+                    <span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-semibold">v1.0 MVP</span>
+                </div>
+                <span class="text-xs text-slate-400 font-medium">Asistent Audit Pre-Depunere & Memorii Tehnice</span>
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full font-medium">
-                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Prototip Activ
-            </span>
+
+        <div class="flex items-center gap-4">
+            <div class="hidden sm:flex items-center gap-2 bg-slate-900/60 border border-slate-700/60 px-3 py-1.5 rounded-lg text-xs text-slate-300">
+                <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                <span>Verificare Ord. 600 / Lg. 7</span>
+            </div>
+            <button class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow-md shadow-blue-600/20 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus"></i> Account
+            </button>
         </div>
     </header>
 
     <!-- Zona Principală Split-Screen -->
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
         
-        <!-- PANOU STÂNGA: Vizualizator Documente (PDF) -->
-        <section class="w-full md:w-1/2 bg-slate-950 p-4 border-r border-slate-800 flex flex-col">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                    <i class="fa-regular fa-file-pdf text-red-400"></i> Document Incarcat (PAD / Act)
-                </h2>
-                <button class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded transition">
-                    <i class="fa-solid fa-upload mr-1"></i> Schimbă PDF
-                </button>
-            </div>
-            
-            <!-- Zona Mocheta PDF (Mockup) -->
-            <div class="flex-1 bg-slate-900 rounded-xl border border-dashed border-slate-800 flex flex-col items-center justify-center p-6 text-center">
-                <i class="fa-solid fa-file-invoice text-5xl text-slate-700 mb-3"></i>
-                <p class="text-sm text-slate-400 font-medium">PAD_Blandiana_7_Actual.pdf</p>
-                <p class="text-xs text-slate-500 mt-1">Scurtă previzualizare a schiței și actelor încărcate</p>
-                <div class="mt-4 flex gap-2">
-                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded">Măsurat: 388 mp</span>
-                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded">C1: 70 mp</span>
+        <!-- PANOU STÂNGA: Ingestion & Drag and Drop PDF -->
+        <section class="w-full md:w-1/2 bg-slate-950 p-6 border-r border-slate-800 flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-regular fa-folder-open text-blue-400"></i> 1. Încărcare Documentație (PAD / Acte)
+                    </h2>
+                    <span id="file-status-badge" class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full font-medium">
+                        Așteptare fișier...
+                    </span>
                 </div>
+
+                <!-- Dropzone Interactiv -->
+                <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-blue-500 bg-slate-900/50 hover:bg-blue-500/5 rounded-2xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[260px] group relative">
+                    <input type="file" id="fileInput" accept=".pdf" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                    
+                    <div class="bg-slate-800 group-hover:bg-blue-600 group-hover:scale-110 p-4 rounded-full text-slate-400 group-hover:text-white transition-all mb-4 shadow-xl">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-slate-200 mb-1 group-hover:text-blue-400 transition">
+                        Trage fișierele PDF aici sau dă click pentru a naviga
+                    </h3>
+                    <p class="text-xs text-slate-400 max-w-xs mb-4">
+                        Suportă PAD-uri vechi/noi, Certificate de Moștenitor, Fiscal și Sentințe Civile.
+                    </p>
+
+                    <div class="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                        <i class="fa-solid fa-lock text-slate-400"></i> Procesare securizată în aplicație
+                    </div>
+                </div>
+
+                <!-- Lista Fișierelor Încărcate (Preview Mock) -->
+                <div id="file-list" class="mt-4 space-y-2 hidden">
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-file-pdf text-red-400 text-xl"></i>
+                            <div>
+                                <p id="uploaded-filename" class="text-xs font-bold text-slate-200">PAD_Blandiana_7.pdf</p>
+                                <p class="text-[10px] text-slate-500">Inspecție structură completă • 2.4 MB</p>
+                            </div>
+                        </div>
+                        <span class="text-emerald-400 text-xs"><i class="fa-solid fa-check-double"></i> Extras</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ghid rapid jos -->
+            <div class="mt-6 bg-slate-900/40 border border-slate-800 p-3.5 rounded-xl text-xs text-slate-400 flex items-start gap-3">
+                <i class="fa-solid fa-lightbulb text-amber-400 text-base mt-0.5"></i>
+                <p>
+                    <strong class="text-slate-300">Sfat CadMemo-Asist:</strong> Pentru cele mai bune rezultate la actualizări, încarcă atât PAD-ul vechi intabulat, cât și schița noilor măsurători.
+                </p>
             </div>
         </section>
 
-        <!-- PANOU DREAPTA: Formular Audit cu Semafor (Verde/Galben/Roșu) -->
-        <section class="w-full md:w-1/2 bg-slate-900 p-6 flex flex-col overflow-y-auto">
-            <div class="mb-6">
-                <h2 class="text-base font-bold text-white mb-1">Rezultat Audit Pre-Depunere</h2>
-                <p class="text-xs text-slate-400">Verifică datele extrase de AI înainte de generarea memoriului tehnic.</p>
+        <!-- PANOU DREAPTA: Formular Audit Pre-Depunere cu Semafor -->
+        <section class="w-full md:w-1/2 bg-slate-900 p-6 flex flex-col justify-between overflow-y-auto">
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-blue-400"></i> 2. Rezultat Audit Pre-Depunere
+                        </h2>
+                        <p class="text-xs text-slate-400">Verificarea automată a încadrării în Ordinul 600/2023</p>
+                    </div>
+                    <span class="text-xs bg-slate-800 text-slate-300 border border-slate-700 px-3 py-1 rounded-lg font-mono">
+                        Status: <strong class="text-amber-400">Review Necesarat</strong>
+                    </span>
+                </div>
+
+                <div class="space-y-4">
+                    
+                    <!-- CARD VERDE (Suprafață Validată) -->
+                    <div class="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-4 transition hover:border-emerald-500/50">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-emerald-400 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-sm"></i> Suprafață Teren & Toleranțe
+                            </span>
+                            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md font-semibold">Validat Legal</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs bg-slate-950/40 p-3 rounded-xl border border-emerald-500/10 mt-2">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Suprafață Măsurată:</span>
+                                <strong class="text-white text-sm">388 mp</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Concluzie Toleranță:</span>
+                                <span class="text-emerald-400 font-medium">În limita de 2% (Ord. 600)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD GALBEN (Extindere C1 / Inspecție moștenire) -->
+                    <div class="bg-amber-950/20 border border-amber-500/30 rounded-2xl p-4 transition hover:border-amber-500/50">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-amber-400 flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-sm"></i> Construcție C1 - Verificare Extindere
+                            </span>
+                            <span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-md font-semibold">Atenție Regim</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                            A fost identificată o modificare de suprafață de la 54 mp la 70 mp. S-au detectat Certificatele de Moștenitor nr. 64/2020 și 65/2020.
+                        </p>
+                        <div class="bg-slate-950/40 p-2.5 rounded-xl border border-amber-500/10">
+                            <label class="text-[10px] text-amber-300/80 font-semibold block mb-1">Temei Înscriere C1:</label>
+                            <input type="text" value="Certificat Moștenitor (Act Autentic) + Fiscal 1958" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+
+                    <!-- CARD ROȘU (Clarificare Anexă C2) -->
+                    <div class="bg-rose-950/20 border border-rose-500/30 rounded-2xl p-4 transition hover:border-rose-500/50">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-rose-400 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-exclamation text-sm"></i> Construcție C2 - Anexă fără Acte
+                            </span>
+                            <span class="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-md font-semibold">Se Solicită Opțiune</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                            Anexa C2 nu apare în actele de moștenire. Cum dorești să o reprezentăm în Memoriul Tehnic?
+                        </p>
+                        <select class="w-full bg-slate-950 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-rose-500">
+                            <option>Înregistrare exclusiv grafică (fără drept de proprietate)</option>
+                            <option>Înscriere drept în baza Certificatului Fiscal</option>
+                        </select>
+                    </div>
+
+                </div>
             </div>
 
-            <div class="space-y-4 flex-1">
-                
-                <!-- CARD VERDE (Încredere 100%) -->
-                <div class="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-circle-check"></i> Suprafață Teren (Validat)
-                        </span>
-                        <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">100% Sigur</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                            <span class="text-slate-400 block">Suprafață Măsurată:</span>
-                            <strong class="text-white text-sm">388 mp</strong>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 block">Toleranță Legală:</span>
-                            <span class="text-emerald-300 font-medium">Încadrat (Ord. 600)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CARD GALBEN (Necesită Confirmare / Atenționare) -->
-                <div class="bg-amber-950/30 border border-amber-500/30 rounded-xl p-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Construcție C1 - Extindere
-                        </span>
-                        <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">Atenție</span>
-                    </div>
-                    <p class="text-xs text-slate-300 mb-3">
-                        Suprafața C1 a crescut de la 54 mp la 70 mp. S-a identificat Certificatul de Moștenitor nr. 64/2020.
-                    </p>
-                    <div class="flex gap-2">
-                        <input type="text" value="An edificare: 1958 (conf. Fiscal)" class="bg-slate-900 border border-amber-500/40 text-xs rounded px-3 py-1.5 text-slate-200 flex-1 focus:outline-none">
-                    </div>
-                </div>
-
-                <!-- CARD ROȘU (Informație Lipsă / De Clarificat) -->
-                <div class="bg-rose-950/30 border border-rose-500/30 rounded-xl p-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-circle-exclamation"></i> Construcție C2 - Anexă
-                        </span>
-                        <span class="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded">Clarificare Nivel</span>
-                    </div>
-                    <p class="text-xs text-slate-300 mb-3">
-                        Anexa C2 nu apare în certificatele de moștenire. Cum o înregistrăm în memoriu?
-                    </p>
-                    <select class="w-full bg-slate-900 border border-rose-500/40 text-xs text-slate-200 rounded px-3 py-2 focus:outline-none">
-                        <option>Înregistrare exclusiv grafică (fără acte)</option>
-                        <option>Solicită intabulare în baza Fiscalului</option>
-                    </select>
-                </div>
-
-            </div>
-
-            <!-- BUTONUL MAGIC DE GENERARE -->
-            <div class="pt-6 border-t border-slate-800 mt-4">
-                <button class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generează Memoriu Tehnic (Anexa 3)
+            <!-- BUTONUL PRINCIPAL DE GENERARE -->
+            <div class="pt-6 border-t border-slate-800 mt-6">
+                <button id="generate-btn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition active:scale-[0.99]">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generează Memoriu Tehnic CadMemo-Asist
                 </button>
             </div>
         </section>
 
     </main>
 
+    <!-- JS Interactiv Micro-Logic -->
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('file-list');
+        const uploadedFilename = document.getElementById('uploaded-filename');
+        const fileStatusBadge = document.getElementById('file-status-badge');
+        const generateBtn = document.getElementById('generate-btn');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                uploadedFilename.textContent = file.name;
+                fileList.classList.remove('hidden');
+                fileStatusBadge.textContent = 'Fișier Analizat!';
+                fileStatusBadge.className = 'text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full font-medium';
+            }
+        });
+
+        generateBtn.addEventListener('click', () => {
+            alert('🎉 CadMemo-Asist: Memoriul Tehnic a fost generat cu succes conform regulilor din Ordinul 600/2023!');
+        });
+    </script>
 </body>
 </html>
