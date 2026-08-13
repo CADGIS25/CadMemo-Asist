@@ -46,34 +46,13 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
 }
 `;
 
-        // Încercăm mai întâi modelul gemini-2.5-flash
-        let modelName = 'gemini-2.5-flash';
-        let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { text: systemPrompt },
-                        {
-                            inline_data: {
-                                mime_type: mimeType || 'application/pdf',
-                                data: base64Data
-                            }
-                        }
-                    ]
-                }],
-                generationConfig: {
-                    temperature: 0.1,
-                    response_mime_type: "application/json"
-                }
-            })
-        });
+        // Lista modelelor noi active în Google AI Studio
+        const candidateModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+        let response = null;
+        let lastData = null;
 
-        // Dacă modelul 2.5 nu răspunde, încercăm cu gemini-2.0-flash
-        if (!response.ok) {
-            modelName = 'gemini-2.0-flash';
-            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+        for (const model of candidateModels) {
+            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -94,17 +73,18 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
                     }
                 })
             });
+
+            lastData = await response.json();
+            if (response.ok) break;
         }
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            console.error('Eroare detaliată Gemini:', JSON.stringify(data));
-            const msg = data.error?.message || 'Eroare necunoscută Google API';
+        if (!response || !response.ok) {
+            console.error('Eroare detaliată Gemini:', JSON.stringify(lastData));
+            const msg = lastData?.error?.message || 'Eroare necunoscută Google API';
             return res.status(500).json({ error: `Eroare Google AI: ${msg}` });
         }
 
-        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const aiText = lastData.candidates?.[0]?.content?.parts?.[0]?.text;
         
         if (!aiText) {
              return res.status(500).json({ error: 'AI-ul nu a generat niciun răspuns text.' });
