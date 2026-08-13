@@ -15,28 +15,6 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Lipsesc datele din fișierul transmis.' });
         }
 
-        // 1. Interogăm Google pentru a afla dinamic modelele active pentru cheia ta API
-        let selectedModel = 'gemini-1.5-flash';
-        try {
-            const modelsResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-            if (modelsResponse.ok) {
-                const modelsData = await modelsResponse.json();
-                const availableModels = modelsData.models || [];
-                
-                // Selectăm primul model activ ce suportă generare de conținut
-                const validModel = availableModels.find(m => 
-                    m.supportedGenerationMethods?.includes('generateContent') &&
-                    (m.name.includes('flash') || m.name.includes('gemini'))
-                );
-                
-                if (validModel) {
-                    selectedModel = validModel.name.replace('models/', '');
-                }
-            }
-        } catch (mErr) {
-            console.warn('Nu s-a putut detecta modelul dinamic, se folosește modelul fallback:', mErr);
-        }
-
         const systemPrompt = `
 Ești un Inspector Virtual de elită și expert în Cadastru și Drept Imobiliar din România, numit CadMemo-Asist.
 Analizează documentul transmis (PAD, Act de Proprietate, Certificat Fiscal, Sentință sau Referat OCPI) prin prisma întregului cadru legal din România:
@@ -68,8 +46,8 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
 }
 `;
 
-        // 2. Apelăm modelul detectat automat
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
+        // Apel direct, rapid și optimizat către modelul stabil
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
