@@ -23,7 +23,7 @@ Analizează documentul transmis (PAD, Act de Proprietate, Certificat Fiscal, Sen
 - Codul Civil (Art. 888 - Titluri autentice notariale/judecătorești, uzucapiune, accesiune);
 - Legea nr. 50/1991 și Codul de Procedură Fiscală.
 
-Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON valid, fără alt text în jur sau blocuri de cod, respectând strict această structură:
+Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON valid, fără alt text în jur, respectând strict această structură:
 {
   "date_teren": {
     "suprafata_act": null,
@@ -46,12 +46,11 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
 }
 `;
 
-        // Folosim endpoint-ul stabil gemini-1.5-flash
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // Încercăm mai întâi modelul gemini-2.5-flash
+        let modelName = 'gemini-2.5-flash';
+        let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{
                     parts: [
@@ -70,6 +69,32 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
                 }
             })
         });
+
+        // Dacă modelul 2.5 nu răspunde, încercăm cu gemini-2.0-flash
+        if (!response.ok) {
+            modelName = 'gemini-2.0-flash';
+            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: systemPrompt },
+                            {
+                                inline_data: {
+                                    mime_type: mimeType || 'application/pdf',
+                                    data: base64Data
+                                }
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: 0.1,
+                        response_mime_type: "application/json"
+                    }
+                })
+            });
+        }
 
         const data = await response.json();
 
