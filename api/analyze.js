@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-    // Permitem doar solicitări de tip POST
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -16,7 +15,6 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Lipsesc datele din fișierul transmis.' });
         }
 
-        // System Prompt-ul specializat pentru Cadastru & Drept Imobiliar în România
         const systemPrompt = `
 Ești un Inspector Virtual de elită și expert în Cadastru și Drept Imobiliar din România, numit CadMemo-Asist.
 Analizează documentul transmis (PAD, Act de Proprietate, Certificat Fiscal, Sentință sau Referat OCPI) prin prisma întregului cadru legal din România:
@@ -25,22 +23,22 @@ Analizează documentul transmis (PAD, Act de Proprietate, Certificat Fiscal, Sen
 - Codul Civil (Art. 888 - Titluri autentice notariale/judecătorești, uzucapiune, accesiune);
 - Legea nr. 50/1991 și Codul de Procedură Fiscală.
 
-Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON valid, fără alt text în jur, respectând strict această structură:
+Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON valid, fără alt text în jur sau blocuri de cod, respectând strict această structură:
 {
   "date_teren": {
-    "suprafata_act": number sau null,
-    "suprafata_masurata": number sau null,
-    "status_toleranta": "verde" sau "galben" sau "rosu",
+    "suprafata_act": null,
+    "suprafata_masurata": null,
+    "status_toleranta": "verde",
     "observatie": "Explicație scurtă privind încadrarea în toleranțe sau modificarea limitelor"
   },
   "constructii": [
     {
       "cod": "C1",
-      "destinatie": "string (ex: locuinta / anexa)",
-      "suprafata_noua": number sau null,
-      "an_constructie": number sau null,
-      "temei_legal": "string (ex: Certificat Mostenitor + Fiscal pre-2001)",
-      "status_audit": "verde" sau "galben" sau "rosu",
+      "destinatie": "locuinta/anexa",
+      "suprafata_noua": null,
+      "an_constructie": null,
+      "temei_legal": "Temei identificat",
+      "status_audit": "verde",
       "observatie": "Explicație legală/tehnică direct aplicabilă"
     }
   ],
@@ -48,8 +46,8 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
 }
 `;
 
-        // Apelăm direct API-ul Gemini 2.5 Flash
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        // Folosim endpoint-ul stabil gemini-1.5-flash
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -67,7 +65,7 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
                     ]
                 }],
                 generationConfig: {
-                    temperature: 0.2,
+                    temperature: 0.1,
                     response_mime_type: "application/json"
                 }
             })
@@ -76,18 +74,22 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('Eroare Gemini:', data);
-            return res.status(500).json({ error: 'A apărut o eroare la procesarea de către AI.', details: data });
+            console.error('Eroare detaliată Gemini:', JSON.stringify(data));
+            const msg = data.error?.message || 'Eroare necunoscută Google API';
+            return res.status(500).json({ error: `Eroare Google AI: ${msg}` });
         }
 
-        // Extragerea răspunsului text din structura Gemini
         const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        const jsonResult = JSON.parse(aiText);
+        
+        if (!aiText) {
+             return res.status(500).json({ error: 'AI-ul nu a generat niciun răspuns text.' });
+        }
 
+        const jsonResult = JSON.parse(aiText);
         return res.status(200).json(jsonResult);
 
     } catch (error) {
         console.error('Server error:', error);
-        return res.status(500).json({ error: 'Eroare internă de server.', message: error.message });
+        return res.status(500).json({ error: 'Eroare de procesare server', message: error.message });
     }
 }
