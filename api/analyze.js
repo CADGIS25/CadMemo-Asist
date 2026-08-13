@@ -46,8 +46,8 @@ Extrage datele relevante și returnează un răspuns EXCLUSIV în format JSON va
 }
 `;
 
-        // Lista modelelor noi active în Google AI Studio
-        const candidateModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+        // Incercam doar pe modelele noi active
+        const candidateModels = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro'];
         let response = null;
         let lastData = null;
 
